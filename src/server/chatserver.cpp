@@ -32,6 +32,8 @@ void ChatServer::onConnection(const TcpConnectionPtr& conn)
 {
     if (!conn->connected())
     {
+        // 处理客户端异常断开
+        ChatService::instance()->clientCloseException(conn);
         conn->shutdown();
     }
 }
@@ -45,7 +47,7 @@ void ChatServer::onMessage(const TcpConnectionPtr& conn,
     // 反序列化
     json js = json::parse(buf);
     // js["msgid"]-->handler-->conn, js, time
-    auto msgHandler =  ChatService::instance()->getHandler(js["msgid"].get<int>()); // js["msgid"]仍为js类型，需转换成int。get为转换类型模板
+    auto msgHandler =  ChatService::instance()->getHandler(js["msgid"].get<int>()); // js["msgid"]仍为js类型，需转换成int
     // 解耦网络模块与业务模块，根据消息类型执行对应的处理
     msgHandler(conn, js, time);
 }

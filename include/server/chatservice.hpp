@@ -31,6 +31,9 @@ public:
 
     // 获取消息对应的处理方法
     MsgHandler getHandler(int msgid);
+
+    // 处理客户端异常退出
+    void clientCloseException(const TcpConnectionPtr &conn);
 private:
     // 消息id与对应处理方法的映射表
     unordered_map<int, MsgHandler> _msgHandlerMap;
