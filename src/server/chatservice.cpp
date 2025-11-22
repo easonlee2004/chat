@@ -3,6 +3,7 @@
 #include "muduo/base/Logging.h"
 #include "usermodel.hpp"
 #include <functional>
+#include <mutex>
 using namespace muduo;
 using namespace muduo::net;
 
@@ -57,7 +58,13 @@ void ChatService::login(const TcpConnectionPtr &conn, json &js, Timestamp time)
         }
         else
         {
-            // 登陆成功
+            // 登陆成功，用map记录用户连接信息
+            // 加锁保证map的线程安全
+            {
+                lock_guard<mutex> lock(_connMutex);
+                _userConnMap.insert({id, conn});
+            }
+
             // 修改state
             user.setState("online");
             _userModel.updateState(user);
@@ -80,6 +87,7 @@ void ChatService::login(const TcpConnectionPtr &conn, json &js, Timestamp time)
         conn->send(response.dump());
     }
 }
+
 // 处理注册业务 name password
 void ChatService::reg(const TcpConnectionPtr &conn, json &js, Timestamp time)
 {

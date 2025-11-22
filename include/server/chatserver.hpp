@@ -3,7 +3,6 @@
 
 #include <muduo/net/EventLoop.h>
 #include <muduo/net/TcpServer.h>
-#include <functional>
 using namespace muduo;
 using namespace muduo::net;
 using namespace std;

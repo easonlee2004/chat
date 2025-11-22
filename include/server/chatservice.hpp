@@ -6,6 +6,7 @@
 #include "usermodel.hpp"
 #include <unordered_map>
 #include <functional>
+#include <mutex>
 using namespace muduo;
 using namespace muduo::net;
 using namespace std;
@@ -36,6 +37,12 @@ private:
 
     // 构造函数私有化
     ChatService();
+
+    // 存储在线用户的通信连接
+    unordered_map<int, TcpConnectionPtr> _userConnMap;
+
+    // _userConnMap的互斥锁
+    mutex _connMutex;
     
     // 数据操作类
     UserModel _userModel;
