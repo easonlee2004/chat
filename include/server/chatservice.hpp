@@ -5,6 +5,7 @@
 #include "json.hpp"
 #include "usermodel.hpp"
 #include "offlinemessagemodel.hpp"
+#include "friendmodel.hpp"
 #include <unordered_map>
 #include <functional>
 #include <mutex>
@@ -33,6 +34,9 @@ public:
     // 一对一聊天业务
     void oneChat(const TcpConnectionPtr &conn, json &js, Timestamp time);
 
+    // 添加好友业务
+    void addFriend(const TcpConnectionPtr &conn, json &js, Timestamp time);
+
     // 处理客户端异常退出
     void clientCloseException(const TcpConnectionPtr &conn);
 
@@ -54,11 +58,13 @@ private:
     // _userConnMap的互斥锁
     mutex _connMutex;
     
-    // 数据操作类
+    // 数据操作类实例
+    // 用户
     UserModel _userModel;
-
-    // 离线消息服务对象
+    // 离线消息
     OfflineMsgModel _offlineMsgModel;
+    // 好友关系
+    FriendModel _friendModel;
 };
 
 

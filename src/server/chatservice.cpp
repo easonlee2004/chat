@@ -2,6 +2,7 @@
 #include "public.hpp"
 #include "muduo/base/Logging.h"
 #include "usermodel.hpp"
+#include "friendmodel.hpp"
 #include <functional>
 #include <mutex>
 #include <vector>
@@ -21,6 +22,7 @@ ChatService::ChatService()
     _msgHandlerMap.insert({LOGIN_MSG, std::bind(&ChatService::login, this, _1, _2, _3)});
     _msgHandlerMap.insert({REG_MSG, std::bind(&ChatService::reg, this, _1, _2, _3)});
     _msgHandlerMap.insert({ONE_CHAT_MSG, std::bind(&ChatService::oneChat, this, _1, _2, _3)});
+    _msgHandlerMap.insert({ADD_FRIEND_MSG, std::bind(&ChatService::addFriend, this, _1, _2, _3)});
 }
 
 // 获取消息对应的处理方法
@@ -31,7 +33,7 @@ MsgHandler ChatService::getHandler(int msgid)
     {
         // 返回默认处理
         return [=](const TcpConnectionPtr &conn, json &js, Timestamp time) {
-            LOG_ERROR << "msgid: " << msgid << " cannot find handler!";
+            LOG_ERROR << "msgid: " << msgid << " Cannot find handler!";
         };
     }
     else
@@ -84,6 +86,25 @@ void ChatService::login(const TcpConnectionPtr &conn, json &js, Timestamp time)
                 response["offlinemsg"] = vec;
                 // 离线消息存入vector后应该将其删除
                 _offlineMsgModel.remove(id);
+            }
+
+            // 查询登录用户的好友及信息
+            vector<User> userVec = _friendModel.query(id);
+            if (!userVec.empty())
+            {
+                // vec2用于存储好友信息js
+                // string和js等价
+                // 相当于response中再嵌套一层friends js，要反序列化两次
+                vector<string> vec2;
+                for (User &user : userVec)
+                {
+                    json js;
+                    js["id"] = user.getId();
+                    js["name"] = user.getName();
+                    js["state"] = user.getState();
+                    vec2.push_back(js.dump());
+                }
+                response["friends"] = vec2;
             }
 
             conn->send(response.dump());
@@ -182,4 +203,12 @@ void ChatService::oneChat(const TcpConnectionPtr &conn, json &js, Timestamp time
 
     // toid不在线，存储离线消息
     _offlineMsgModel.insert(toid, js.dump());
+}
+
+void ChatService::addFriend(const TcpConnectionPtr &conn, json &js, Timestamp time)
+{
+    int userid = js["id"].get<int>();
+    int friendid = js["friendid"].get<int>();
+
+    _friendModel.insert(userid, friendid);
 }
